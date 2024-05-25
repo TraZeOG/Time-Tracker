@@ -4,11 +4,12 @@ import json
 import os
 import pygame
 import psutil
+import pickle
 import pygetwindow as gw
 from pynput import keyboard, mouse
 
 stockage_file = "activity_log.json"
-inactive_time = 5  # durée avant de considérer l'utilisateur comme inactif
+inactive_time = 60  # durée avant de considérer l'utilisateur comme inactif
 naviguateurs = ["chrome.exe", "firefox.exe", "msedge.exe", "opera.exe", "operagx", "vivaldi.exe", "brave.exe"]
 months = ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Jui", "Août", "Sept", "Oct", "Nov", "Dec"]
 start_time = None
@@ -19,12 +20,17 @@ def load_logs():
             with open(stockage_file, "r") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            print("Erreur de décodage JSON. Le fichier est corrompu. Dommage mdr")
+            print("Erreur de décodage JSON. Le fichier est corrompu.")
     return {}
 
-def save_logs(activity_log):
+def save_logs_and_data(activity_log):
     with open(stockage_file, "w") as f:
         json.dump(activity_log, f, indent=4)
+    pickle_out = open('data/data_main', 'wb')
+    data[0] = clr_background
+    data[1] = clr_text
+    pickle.dump(data, pickle_out)
+    pickle_out.close()
 
 def get_date():
     jour_abrev = {
@@ -77,12 +83,6 @@ def track_time(activity_log):
         usage_summary[day] = total_seconds / 3600  # Convert seconds to hours
     return usage_summary
 
-def is_in_browser():
-    for proc in psutil.process_iter(['pid', 'name']):
-        if proc.info['name'] in naviguateurs:
-            return True
-    return False
-
 def is_watching_videos():
     try:
         window = gw.getActiveWindow()
@@ -92,7 +92,7 @@ def is_watching_videos():
 
 def clean_up_sessions(activity_log):
     """Ensure any open sessions from previous runs are closed."""
-    for day, activities in activity_log.items():
+    for _, activities in activity_log.items():
         for activity in activities:
             if "end" not in activity:
                 end_time = datetime.datetime.now().isoformat()
@@ -109,7 +109,6 @@ def clean_up_sessions(activity_log):
 
 activity_log = load_logs()
 clean_up_sessions(activity_log)
-save_logs(activity_log)
 last_active = time.time()
 active = False
 
@@ -134,6 +133,7 @@ screen_width, screen_height = 760, 160
 screen = pygame.display.set_mode((screen_width, screen_height))
 font_lilitaone_50 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 50)
 font_lilitaone_30 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 30)
+font_lilitaone_10 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 10)
 
 def draw_text(texte, font, couleur, x, y):
     img = font.render(texte, True, couleur)
@@ -142,18 +142,29 @@ def draw_text(texte, font, couleur, x, y):
 
 class Bouton():
 
-    def __init__(self, x, y, width, height, color, color_text):
-        self.rect = pygame.draw.rect(screen, color, (x, y, width, height))
+    def __init__(self, x, y, width, height, type, color, color_text, image):
+
         self.clicked = False
-        self.color = color
-        self.x, self.y = x, y
-        self.width, self.height = width, height
-        self.color_text = color_text
+        self.type = type
+        if self.type == "colored":
+            self.rect = pygame.draw.rect(screen, color, (x, y, width, height))
+            self.x, self.y = x, y
+            self.width, self.height = width, height
+            self.color = color
+            self.color_text = color_text
+        elif self.type == "image":
+            self.image = pygame.transform.scale(image, (width, height))
+            self.rect = self.image.get_rect()
+            self.rect.x = x
+            self.rect.y = y
 
     def draw(self):
         reset_click = False
         mouse_cos = pygame.mouse.get_pos()
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+        if self.type == "colored":
+            pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+        elif self.type == "image":
+            screen.blit(self.image, self.rect)
         if self.rect.collidepoint(mouse_cos):
             if pygame.mouse.get_pressed()[0] == 1:
                 self.clicked = True
@@ -164,18 +175,27 @@ class Bouton():
 
 clr_white = (255,255,255)
 clr_black = (0,0,0)
-clr_background = (149,212,175)
-clr_text = (255,255,255)
+pickle_in = open(f'data/data_main', 'rb')
+data = pickle.load(pickle_in)
+clr_background = data[0]
+clr_text = data[1]
 
-bouton_black = Bouton(screen_width - 40, 10, 30, 30, (0,0,0), clr_white)
-bouton_red = Bouton(screen_width - 40, 45, 30, 30, (202, 60, 102), clr_white)
-bouton_green = Bouton(screen_width - 40, 80, 30, 30, (149,212,175), clr_white)
-bouton_yellow = Bouton(screen_width - 40, 115, 30, 30, (235,212,169), clr_black)
-bouton_white = Bouton(screen_width - 75, 10, 30, 30, (243,243,243), clr_black)
-bouton_brown = Bouton(screen_width - 75, 45, 30, 30, (182, 115, 50), clr_white)
-bouton_blue = Bouton(screen_width - 75, 80, 30, 30, (87, 132, 186), clr_white)
-bouton_pink = Bouton(screen_width - 75, 115, 30, 30, (255, 122, 209), clr_white)
-boutons = [bouton_black, bouton_green, bouton_yellow, bouton_white, bouton_red, bouton_brown, bouton_blue, bouton_pink]
+bouton_black = Bouton(screen_width - 40, 10, 30, 30, "colored", (0,0,0), clr_white, None)
+bouton_red = Bouton(screen_width - 40, 45, 30, 30, "colored", (202, 60, 102), clr_white, None)
+bouton_green = Bouton(screen_width - 40, 80, 30, 30, "colored", (149,212,175), clr_white, None)
+bouton_yellow = Bouton(screen_width - 40, 115, 30, 30, "colored", (235,212,169), clr_black, None)
+bouton_white = Bouton(screen_width - 75, 10, 30, 30, "colored", (243,243,243), clr_black, None)
+bouton_brown = Bouton(screen_width - 75, 45, 30, 30, "colored", (182, 115, 50), clr_white, None)
+bouton_blue = Bouton(screen_width - 75, 80, 30, 30, "colored", (87, 132, 186), clr_white, None)
+bouton_pink = Bouton(screen_width - 75, 115, 30, 30, "colored", (255, 122, 209), clr_white, None)
+
+img_fleche = pygame.image.load("sprites/img_fleche.webp")
+img_fleche_flip = pygame.transform.flip(img_fleche, True, False)
+bouton_colors = Bouton(screen_width - 27, 15, 23, 31, "image", None, None, img_fleche_flip)
+bouton_colors_bis = Bouton(screen_width - 107, 15, 23, 31, "image", None, None, img_fleche_flip)
+boutons_colored = [bouton_black, bouton_green, bouton_yellow, bouton_white, bouton_red, bouton_brown, bouton_blue, bouton_pink]
+menu_colors = False
+current_day = get_date()
 
 run = True
 while run:
@@ -184,7 +204,7 @@ while run:
             run = False
 
     if time.time() - last_active > inactive_time:
-        if active and not (is_in_browser() and is_watching_videos()):
+        if active and not  is_watching_videos():
             end_activity(activity_log)
             active = False
     else:
@@ -194,28 +214,33 @@ while run:
 
     clock.tick(60)
     screen.fill(clr_background)
-    pygame.draw.rect(screen, (100,100,100), (screen_width - 80, 5, 75, 145))
-    draw_text("Temps passé sur le PC:", font_lilitaone_30, clr_text, 150, 20)
+    draw_text("Temps passé sur le PC:", font_lilitaone_50, clr_text, screen_width // 2 - 30, 55)
+    draw_text("© TraZe 2024", font_lilitaone_10, clr_text, screen_width - 30, screen_height - 5)
 
-    for bouton in boutons:
-        if bouton.draw():
-            clr_background = bouton.color
-            clr_text = bouton.color_text
+    if not menu_colors:
+        if bouton_colors.draw():
+            menu_colors = True
 
-    save_logs(activity_log)
+    if menu_colors:
+        pygame.draw.rect(screen, (100,100,100), (screen_width - 80, 5, 75, 145))
+        for bouton in boutons_colored:
+            if bouton.draw():
+                clr_background = bouton.color
+                clr_text = bouton.color_text
+        if bouton_colors_bis.draw():
+            menu_colors = False
+
     summary = track_time(activity_log)
-
-    paragraphe = 80
     for day, hours in summary.items():
-        hours_int = int(hours)
-        minutes = int((hours % 1) * 60)
-        seconds = int(((hours * 3600) % 60))
-        draw_text(f"{day}: {hours_int}h {minutes:02d}min {seconds:02d}sec", font_lilitaone_50, clr_text, screen_width // 2 - 30, paragraphe)
-        paragraphe += 50
+        if day == current_day:
+            hours_int = int(hours)
+            minutes = int((hours % 1) * 60)
+            seconds = int(((hours * 3600) % 60))
+            draw_text(f"{day}: {hours_int}h {minutes:02d}min {seconds:02d}sec", font_lilitaone_30, clr_text, screen_width // 2 - 30, 105)
 
     pygame.display.update()
 
 keyboard_listener.stop()
 mouse_listener.stop()
+save_logs_and_data(activity_log)
 pygame.quit()
-save_logs(activity_log)
