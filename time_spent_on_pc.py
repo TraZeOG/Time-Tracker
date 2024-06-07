@@ -3,13 +3,18 @@ import datetime
 import json
 import os
 import pygame
-import psutil
 import pickle
 import pygetwindow as gw
 from pynput import keyboard, mouse
+from PIL import Image, ImageDraw
+import pystray
+from pystray import MenuItem as item
+import threading
+import time
+import sys
 
 stockage_file = "activity_log.json"
-inactive_time = 60  # durée avant de considérer l'utilisateur comme inactif
+inactive_time = 15  # durée avant de considérer l'utilisateur comme inactif
 naviguateurs = ["chrome.exe", "firefox.exe", "msedge.exe", "opera.exe", "operagx", "vivaldi.exe", "brave.exe"]
 months = ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Jui", "Août", "Sept", "Oct", "Nov", "Dec"]
 start_time = None
@@ -197,6 +202,8 @@ boutons_colored = [bouton_black, bouton_green, bouton_yellow, bouton_white, bout
 menu_colors = False
 current_day = get_date()
 
+
+
 run = True
 while run:
     for event in pygame.event.get():
@@ -244,3 +251,39 @@ keyboard_listener.stop()
 mouse_listener.stop()
 save_logs_and_data(activity_log)
 pygame.quit()
+
+# Just some functions to make the program minimize in the taskbar when closed -----------------------------------------------------
+
+import subprocess
+
+def create_image():
+    # Créer une image carrée noire
+    image = Image.new('RGB', (64, 64), "black")
+    dc = ImageDraw.Draw(image)
+    dc.rectangle(
+        (16, 16, 48, 48),
+        fill="white")
+    return image
+
+def on_exit(icon, item):
+    icon.stop()
+    python = sys.executable
+    threading.Thread(target=lambda: subprocess.call([python] + sys.argv)).start()
+
+def setup(icon):
+    icon.visible = True
+
+icon = pystray.Icon("test")
+icon.icon = create_image()
+icon.title = "Time Spent on PC"
+icon.menu = pystray.Menu(
+    item('Quitter', on_exit)
+)
+
+thread = threading.Thread(target=lambda: None)
+thread.daemon = True
+thread.start()
+
+# Lancer l'icône dans la barre des tâches
+icon.run(setup)
+
