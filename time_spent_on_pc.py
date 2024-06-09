@@ -114,9 +114,6 @@ mouse_listener.start()
 
 #Now it's Pygame turn (to create a visual interface hehe :) ) --------------------------------------------------------------------------------------------------------
 
-pygame.init()
-pygame.display.set_caption("Time Spent On PC")
-
 def draw_text(texte, font, couleur, x, y):
     img = font.render(texte, True, couleur)
     text_width, text_height = font.size(texte)
@@ -241,10 +238,14 @@ def create_image():
         fill="white")
     return image
 
-def on_exit(icon, item):
+def on_dev(icon, item):
     icon.stop()
     python = sys.executable
-    threading.Thread(target=lambda: os.execv(python, [python] + sys.argv)).start()
+    threading.Thread(target=lambda: subprocess.call([python] + sys.argv)).start()
+
+
+def on_exit(icon, _):
+    icon.stop()
 
 def setup(icon):
     icon.visible = True
@@ -253,7 +254,7 @@ icon = pystray.Icon("test")
 icon.icon = create_image()
 icon.title = "Time Spent on PC"
 icon.menu = pystray.Menu(
-    item("Développer", on_exit),
+    item("Développer", on_dev),
     item('Quitter', on_exit)
 )
 
@@ -263,4 +264,3 @@ thread.start()
 
 # Lancer l'icône dans la barre des tâches
 icon.run(setup)
-

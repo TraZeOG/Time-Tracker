@@ -12,6 +12,7 @@ from pystray import MenuItem as item
 import threading
 import time
 import sys
+import subprocess
 
 #---------------
 INACTIVE_TIME = 15  # durée avant de considérer l'utilisateur comme inactif
@@ -21,6 +22,10 @@ MONTHS = ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Jui", "Août", "Sept", "Oc
 START_TIME = None
 
 #PYGAME -------------------------
+
+pygame.init()
+pygame.display.set_caption("Time Spent On PC")
+
 CLOCK = pygame.time.Clock()
 SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
