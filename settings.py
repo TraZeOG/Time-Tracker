@@ -24,7 +24,9 @@ START_TIME = None
 #PYGAME --------------------------------------------------------------------------------------------
 
 pygame.init()
-pygame.display.set_caption("Time Master PC")
+pygame.display.set_caption("Time Tracker PC")
+ICONE = pygame.image.load("icons/time_tracker.bmp")
+pygame.display.set_icon(ICONE)
 
 CLOCK = pygame.time.Clock()
 SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160

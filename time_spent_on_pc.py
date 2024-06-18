@@ -20,6 +20,7 @@ def save_logs_and_data(activity_log):
     pickle_out.close()
 
 def get_date():
+    #Trasnlating the date in French :p  (yes it's hard to accept but english isnt the only language in the world blud)
     jour_abrev = {
         "Monday": "Lun",
         "Tuesday": "Mar",
@@ -110,11 +111,10 @@ def on_activity():
 
 def create_image():
     """Creates the design of the icon in taskbar"""
-    image = Image.new('RGB', (64, 64), "green")
-    dc = ImageDraw.Draw(image)
-    dc.rectangle(
-        (16, 16, 48, 48),
-        fill="red")
+    image = Image.new('RGBA', (64, 64), (0,0,0,0))
+    bmp_image = Image.open("icons/time_tracker.bmp")
+    bmp_image = bmp_image.resize((64, 64), Image.Resampling.LANCZOS)
+    image.paste(bmp_image, (0, 0))
     return image
 
 def on_maximise(icon):
@@ -122,7 +122,7 @@ def on_maximise(icon):
     global icon_status
     icon.stop()
     icon_status = False
-    window = gw.getWindowsWithTitle("Time Spent On PC")[0]
+    window = gw.getWindowsWithTitle("Time Tracker PC")[0]
     window.show()
     window.restore()
 
@@ -168,7 +168,7 @@ class Bouton():
         elif self.type == "image":
             SCREEN.blit(self.image, self.rect)
         if self.rect.collidepoint(mouse_cos):
-            """This part of the code handles all bugs with buttons (so when the user clicks it clicks one time and one time only)"""
+            """This part of the code handles all bugs with buttons (so when the user clicks it clicks one time and one time only) (scuffed ik)"""
             if pygame.mouse.get_pressed()[0] == 1:
                 self.clicked = True
             if pygame.mouse.get_pressed()[0] == 0 and self.clicked == True:
@@ -257,7 +257,7 @@ while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 icon_status = True
-                window = gw.getWindowsWithTitle("Time Spent On PC")[0]
+                window = gw.getWindowsWithTitle("Time Tracker PC")[0]
                 window.minimize()
                 window.hide()
 
@@ -265,7 +265,7 @@ while run:
         if not already_icon:
             icon = pystray.Icon("test")
             icon.icon = create_image()
-            icon.title = "Time Spent on PC"
+            icon.title = "Time Tracker PC"
             icon.menu = pystray.Menu(
                 item("Développer", on_maximise),
                 item('Quitter', on_exit)
