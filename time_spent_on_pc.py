@@ -95,6 +95,7 @@ def clean_up_sessions(activity_log):
 
                 activity["end"] = (start_time_dt + datetime.timedelta(seconds=delta_temps)).isoformat()
 
+
 activity_log = load_logs()
 clean_up_sessions(activity_log)
 last_active = time.time()
@@ -107,19 +108,19 @@ def on_activity():
         activity_logs(activity_log)
         active = True
 
-
 def create_image():
     # Créer une image carrée noire
-    image = Image.new('RGB', (64, 64), "black")
+    image = Image.new('RGB', (64, 64), "green")
     dc = ImageDraw.Draw(image)
     dc.rectangle(
         (16, 16, 48, 48),
-        fill="white")
+        fill="red")
     return image
 
-def on_dev(icon, item):
+def on_dev(icon):
     global icon_status
     global already_icon
+
     icon.stop()
     icon_status = False
     already_icon = False
@@ -128,9 +129,17 @@ def on_dev(icon, item):
     CLOCK = pygame.time.Clock()
     SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
     SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    FONT_LILITAONE_50 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 50)
+    FONT_LILITAONE_30 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 30)
+    FONT_LILITAONE_10 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 10)
+    CLOCK.tick(60)
+    SCREEN.fill(clr_background)
+    pygame.display.update()
 
 def on_exit(icon, _):
+    global run
     icon.stop()
+    run = False
 
 def setup(icon):
     icon.visible = True
@@ -142,11 +151,6 @@ keyboard_listener.start()
 mouse_listener.start()
 
 #Now it's Pygame turn (to create a visual interface hehe :) ) --------------------------------------------------------------------------------------------------------
-
-def draw_text(texte, font, couleur, x, y):
-    img = font.render(texte, True, couleur)
-    text_width, text_height = font.size(texte)
-    SCREEN.blit(img, (x - text_width // 2, y - text_height // 2))
 
 class Bouton():
 
@@ -181,6 +185,10 @@ class Bouton():
                 self.clicked = False
         return reset_click
 
+def draw_text(texte, font, couleur, x, y):
+    img = font.render(texte, True, couleur)
+    text_width, text_height = font.size(texte)
+    SCREEN.blit(img, (x - text_width // 2, y - text_height // 2))
 
 pickle_in = open(f'data/data_main', 'rb')
 data = pickle.load(pickle_in)
@@ -209,6 +217,7 @@ already_icon = False
 
 run = True
 while run:
+    print("okkk")
     summary = track_time(activity_log)
     if time.time() - last_active > INACTIVE_TIME:
         if active and not  is_watching_videos():
@@ -220,7 +229,7 @@ while run:
             active = True
 
     if not icon_status:
-                
+        print("ok")
         CLOCK.tick(60)
         SCREEN.fill(clr_background)
         draw_text("Temps passé sur le PC:", FONT_LILITAONE_50, clr_text, SCREEN_WIDTH // 2 - 30, 55)
@@ -230,7 +239,7 @@ while run:
             if bouton_colors.draw():
                 menu_colors = True
 
-        if menu_colors:
+        else:
             pygame.draw.rect(SCREEN, (100,100,100), (SCREEN_WIDTH - 80, 5, 75, 145))
             for bouton in boutons_colored:
                 if bouton.draw():
@@ -245,12 +254,14 @@ while run:
                 minutes = int((hours % 1) * 60)
                 seconds = int(((hours * 3600) % 60))
                 draw_text(f"{day}: {hours_int}h {minutes:02d}min {seconds:02d}sec", FONT_LILITAONE_30, clr_text, SCREEN_WIDTH // 2 - 30, 105)
+
         pygame.display.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 icon_status = True
                 pygame.quit()
+
 
     else:
         if not already_icon:
@@ -261,14 +272,8 @@ while run:
                 item("Développer", on_dev),
                 item('Quitter', on_exit)
             )
-            thread = threading.Thread(target=lambda: None)
-            thread.daemon = True
-            thread.start()
             icon.run(setup)
             already_icon = True
-
-# Lancer l'icône dans la barre des tâches
-
 
 keyboard_listener.stop()
 mouse_listener.stop()

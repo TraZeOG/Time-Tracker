@@ -9,10 +9,7 @@ from pynput import keyboard, mouse
 from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item
-import threading
 import time
-import sys
-import subprocess
 
 #---------------
 INACTIVE_TIME = 15  # durée avant de considérer l'utilisateur comme inactif
