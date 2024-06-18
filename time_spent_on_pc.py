@@ -119,22 +119,13 @@ def create_image():
 
 def on_dev(icon):
     global icon_status
-    global already_icon
 
     icon.stop()
     icon_status = False
-    already_icon = False
-    pygame.init()
-    pygame.display.set_caption("Time Spent On PC")
-    CLOCK = pygame.time.Clock()
-    SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
-    SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    FONT_LILITAONE_50 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 50)
-    FONT_LILITAONE_30 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 30)
-    FONT_LILITAONE_10 = pygame.font.Font("fonts/LilitaOne-Regular.ttf", 10)
-    CLOCK.tick(60)
-    SCREEN.fill(clr_background)
-    pygame.display.update()
+    window = gw.getWindowsWithTitle("Time Spent On PC")[0]
+    window.show()  # Afficher à nouveau la fenêtre
+    window.restore()
+
 
 def on_exit(icon, _):
     global run
@@ -213,6 +204,7 @@ menu_colors = False
 current_day = get_date()
 icon_status = False
 already_icon = False
+already_window = False
 
 
 run = True
@@ -230,6 +222,14 @@ while run:
 
     if not icon_status:
         print("ok")
+        if not already_window:
+            pygame.init()
+            pygame.display.set_caption("Time Spent On PC")
+            CLOCK = pygame.time.Clock()
+            SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
+            SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+            already_icon = False
+            already_window = True
         CLOCK.tick(60)
         SCREEN.fill(clr_background)
         draw_text("Temps passé sur le PC:", FONT_LILITAONE_50, clr_text, SCREEN_WIDTH // 2 - 30, 55)
@@ -260,8 +260,9 @@ while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 icon_status = True
-                pygame.quit()
-
+                window = gw.getWindowsWithTitle("Time Spent On PC")[0]
+                window.minimize()
+                window.hide()
 
     else:
         if not already_icon:
@@ -273,6 +274,7 @@ while run:
                 item('Quitter', on_exit)
             )
             icon.run(setup)
+            already_window = False
             already_icon = True
 
 keyboard_listener.stop()
