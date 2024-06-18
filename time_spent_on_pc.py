@@ -107,6 +107,35 @@ def on_activity():
         activity_logs(activity_log)
         active = True
 
+
+def create_image():
+    # Créer une image carrée noire
+    image = Image.new('RGB', (64, 64), "black")
+    dc = ImageDraw.Draw(image)
+    dc.rectangle(
+        (16, 16, 48, 48),
+        fill="white")
+    return image
+
+def on_dev(icon, item):
+    global icon_status
+    global already_icon
+    icon.stop()
+    icon_status = False
+    already_icon = False
+    pygame.init()
+    pygame.display.set_caption("Time Spent On PC")
+    CLOCK = pygame.time.Clock()
+    SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
+    SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+def on_exit(icon, _):
+    icon.stop()
+
+def setup(icon):
+    icon.visible = True
+
+
 keyboard_listener = keyboard.Listener(on_press=lambda _: on_activity())
 mouse_listener = mouse.Listener(on_move=lambda *args: on_activity(), on_click=lambda *args: on_activity())
 keyboard_listener.start()
@@ -174,15 +203,13 @@ bouton_colors_bis = Bouton(SCREEN_WIDTH - 107, 15, 23, 31, "image", None, None, 
 boutons_colored = [bouton_black, bouton_green, bouton_yellow, bouton_white, bouton_red, bouton_brown, bouton_blue, bouton_pink]
 menu_colors = False
 current_day = get_date()
-
+icon_status = False
+already_icon = False
 
 
 run = True
 while run:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-
+    summary = track_time(activity_log)
     if time.time() - last_active > INACTIVE_TIME:
         if active and not  is_watching_videos():
             end_activity(activity_log)
@@ -192,75 +219,58 @@ while run:
             activity_logs(activity_log)
             active = True
 
-    CLOCK.tick(60)
-    SCREEN.fill(clr_background)
-    draw_text("Temps passé sur le PC:", FONT_LILITAONE_50, clr_text, SCREEN_WIDTH // 2 - 30, 55)
-    draw_text("© TraZe 2024", FONT_LILITAONE_10, clr_text, SCREEN_WIDTH - 30, SCREEN_HEIGHT - 5)
+    if not icon_status:
+                
+        CLOCK.tick(60)
+        SCREEN.fill(clr_background)
+        draw_text("Temps passé sur le PC:", FONT_LILITAONE_50, clr_text, SCREEN_WIDTH // 2 - 30, 55)
+        draw_text("© TraZe 2024", FONT_LILITAONE_10, clr_text, SCREEN_WIDTH - 30, SCREEN_HEIGHT - 5)
 
-    if not menu_colors:
-        if bouton_colors.draw():
-            menu_colors = True
+        if not menu_colors:
+            if bouton_colors.draw():
+                menu_colors = True
 
-    if menu_colors:
-        pygame.draw.rect(SCREEN, (100,100,100), (SCREEN_WIDTH - 80, 5, 75, 145))
-        for bouton in boutons_colored:
-            if bouton.draw():
-                clr_background = bouton.color
-                clr_text = bouton.color_text
-        if bouton_colors_bis.draw():
-            menu_colors = False
+        if menu_colors:
+            pygame.draw.rect(SCREEN, (100,100,100), (SCREEN_WIDTH - 80, 5, 75, 145))
+            for bouton in boutons_colored:
+                if bouton.draw():
+                    clr_background = bouton.color
+                    clr_text = bouton.color_text
+            if bouton_colors_bis.draw():
+                menu_colors = False
+                
+        for day, hours in summary.items():
+            if day == current_day:
+                hours_int = int(hours)
+                minutes = int((hours % 1) * 60)
+                seconds = int(((hours * 3600) % 60))
+                draw_text(f"{day}: {hours_int}h {minutes:02d}min {seconds:02d}sec", FONT_LILITAONE_30, clr_text, SCREEN_WIDTH // 2 - 30, 105)
+        pygame.display.update()
 
-    summary = track_time(activity_log)
-    for day, hours in summary.items():
-        if day == current_day:
-            hours_int = int(hours)
-            minutes = int((hours % 1) * 60)
-            seconds = int(((hours * 3600) % 60))
-            draw_text(f"{day}: {hours_int}h {minutes:02d}min {seconds:02d}sec", FONT_LILITAONE_30, clr_text, SCREEN_WIDTH // 2 - 30, 105)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                icon_status = True
+                pygame.quit()
 
-    pygame.display.update()
+    else:
+        if not already_icon:
+            icon = pystray.Icon("test")
+            icon.icon = create_image()
+            icon.title = "Time Spent on PC"
+            icon.menu = pystray.Menu(
+                item("Développer", on_dev),
+                item('Quitter', on_exit)
+            )
+            thread = threading.Thread(target=lambda: None)
+            thread.daemon = True
+            thread.start()
+            icon.run(setup)
+            already_icon = True
+
+# Lancer l'icône dans la barre des tâches
+
 
 keyboard_listener.stop()
 mouse_listener.stop()
 save_logs_and_data(activity_log)
 pygame.quit()
-
-# Just some functions to make the program minimize in the taskbar when closed -----------------------------------------------------
-
-
-
-def create_image():
-    # Créer une image carrée noire
-    image = Image.new('RGB', (64, 64), "black")
-    dc = ImageDraw.Draw(image)
-    dc.rectangle(
-        (16, 16, 48, 48),
-        fill="white")
-    return image
-
-def on_dev(icon, item):
-    icon.stop()
-    python = sys.executable
-    threading.Thread(target=lambda: subprocess.call([python] + sys.argv)).start()
-
-
-def on_exit(icon, _):
-    icon.stop()
-
-def setup(icon):
-    icon.visible = True
-
-icon = pystray.Icon("test")
-icon.icon = create_image()
-icon.title = "Time Spent on PC"
-icon.menu = pystray.Menu(
-    item("Développer", on_dev),
-    item('Quitter', on_exit)
-)
-
-thread = threading.Thread(target=lambda: None)
-thread.daemon = True
-thread.start()
-
-# Lancer l'icône dans la barre des tâches
-icon.run(setup)
