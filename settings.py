@@ -1,3 +1,5 @@
+#MODULES ---------------------------------------------------------------------------------------
+
 import time
 import datetime
 import json
@@ -11,17 +13,18 @@ import pystray
 from pystray import MenuItem as item
 import time
 
-#---------------
+#VARIABLES -------------------------------------------------------------------------------------------------
+
 INACTIVE_TIME = 15  # durée avant de considérer l'utilisateur comme inactif
-#---------------
+
 STOCKAGE_FILE = "activity_log.json"
 MONTHS = ["Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Jui", "Août", "Sept", "Oct", "Nov", "Dec"]
 START_TIME = None
 
-#PYGAME -------------------------
+#PYGAME --------------------------------------------------------------------------------------------
 
 pygame.init()
-pygame.display.set_caption("Time Spent On PC")
+pygame.display.set_caption("Time Master PC")
 
 CLOCK = pygame.time.Clock()
 SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160

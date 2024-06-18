@@ -1,7 +1,6 @@
 from settings import *
 
 
-
 def load_logs():
     if os.path.exists(STOCKAGE_FILE) and os.path.getsize(STOCKAGE_FILE) > 0:
         try:
@@ -72,9 +71,10 @@ def track_time(activity_log):
     return usage_summary
 
 def is_watching_videos():
+    """Check if the user is watching videos"""
     try:
         window = gw.getActiveWindow()
-        return window and ("YouTube" in window.title or "Netflix" in window.title)
+        return window and ("YouTube" in window.title or "Netflix" in window.title or "Prime Video" in window.title)
     except:
         return False
 
@@ -109,7 +109,7 @@ def on_activity():
         active = True
 
 def create_image():
-    # Créer une image carrée noire
+    """Creates the design of the icon in taskbar"""
     image = Image.new('RGB', (64, 64), "green")
     dc = ImageDraw.Draw(image)
     dc.rectangle(
@@ -117,17 +117,17 @@ def create_image():
         fill="red")
     return image
 
-def on_dev(icon):
+def on_maximise(icon):
+    """Happens when the user clicks on "Maximise" in the taskbar's icon"""
     global icon_status
-
     icon.stop()
     icon_status = False
     window = gw.getWindowsWithTitle("Time Spent On PC")[0]
-    window.show()  # Afficher à nouveau la fenêtre
+    window.show()
     window.restore()
 
-
 def on_exit(icon, _):
+    """Happens when exiting the program"""
     global run
     icon.stop()
     run = False
@@ -135,18 +135,17 @@ def on_exit(icon, _):
 def setup(icon):
     icon.visible = True
 
-
+"""Used to know when the user is afk (idle) or isn't"""
 keyboard_listener = keyboard.Listener(on_press=lambda _: on_activity())
 mouse_listener = mouse.Listener(on_move=lambda *args: on_activity(), on_click=lambda *args: on_activity())
 keyboard_listener.start()
 mouse_listener.start()
 
-#Now it's Pygame turn (to create a visual interface hehe :) ) --------------------------------------------------------------------------------------------------------
+#Now it's Pygame turn (to create a nice looking visual interface) --------------------------------------------------------------------------------------------------------
 
 class Bouton():
 
     def __init__(self, x, y, width, height, type, color, color_text, image):
-
         self.clicked = False
         self.type = type
         if self.type == "colored":
@@ -169,6 +168,7 @@ class Bouton():
         elif self.type == "image":
             SCREEN.blit(self.image, self.rect)
         if self.rect.collidepoint(mouse_cos):
+            """This part of the code handles all bugs with buttons (so when the user clicks it clicks one time and one time only)"""
             if pygame.mouse.get_pressed()[0] == 1:
                 self.clicked = True
             if pygame.mouse.get_pressed()[0] == 0 and self.clicked == True:
@@ -177,6 +177,7 @@ class Bouton():
         return reset_click
 
 def draw_text(texte, font, couleur, x, y):
+    """small function used to draw text (the text is centered)"""
     img = font.render(texte, True, couleur)
     text_width, text_height = font.size(texte)
     SCREEN.blit(img, (x - text_width // 2, y - text_height // 2))
@@ -206,11 +207,10 @@ icon_status = False
 already_icon = False
 already_window = False
 
-
 run = True
 while run:
-    print("okkk")
     summary = track_time(activity_log)
+    #Check if the user is idle
     if time.time() - last_active > INACTIVE_TIME:
         if active and not  is_watching_videos():
             end_activity(activity_log)
@@ -221,24 +221,20 @@ while run:
             active = True
 
     if not icon_status:
-        print("ok")
+        #already_window is used so this doesn't happen every frame but only once (per maximisation of the window)
         if not already_window:
-            pygame.init()
-            pygame.display.set_caption("Time Spent On PC")
-            CLOCK = pygame.time.Clock()
-            SCREEN_WIDTH, SCREEN_HEIGHT = 760, 160
             SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
             already_icon = False
             already_window = True
         CLOCK.tick(60)
         SCREEN.fill(clr_background)
         draw_text("Temps passé sur le PC:", FONT_LILITAONE_50, clr_text, SCREEN_WIDTH // 2 - 30, 55)
+        #dont you dare delete this line >:(
         draw_text("© TraZe 2024", FONT_LILITAONE_10, clr_text, SCREEN_WIDTH - 30, SCREEN_HEIGHT - 5)
 
         if not menu_colors:
             if bouton_colors.draw():
                 menu_colors = True
-
         else:
             pygame.draw.rect(SCREEN, (100,100,100), (SCREEN_WIDTH - 80, 5, 75, 145))
             for bouton in boutons_colored:
@@ -249,6 +245,7 @@ while run:
                 menu_colors = False
                 
         for day, hours in summary.items():
+            #displaying the time spent on the pc today
             if day == current_day:
                 hours_int = int(hours)
                 minutes = int((hours % 1) * 60)
@@ -270,7 +267,7 @@ while run:
             icon.icon = create_image()
             icon.title = "Time Spent on PC"
             icon.menu = pystray.Menu(
-                item("Développer", on_dev),
+                item("Développer", on_maximise),
                 item('Quitter', on_exit)
             )
             icon.run(setup)
