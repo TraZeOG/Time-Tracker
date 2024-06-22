@@ -20,7 +20,7 @@ def save_logs_and_data(activity_log):
     pickle_out.close()
 
 def get_date():
-    #Trasnlating the date in French :p  (yes it's hard to accept but english isnt the only language in the world blud)
+    #Translating the date in French :p  (yes english isnt the only language in the world blud)
     jour_abrev = {
         "Monday": "Lun",
         "Tuesday": "Mar",
@@ -68,14 +68,14 @@ def track_time(activity_log):
             start_time = datetime.datetime.fromisoformat(activity["start"])
             end_time = datetime.datetime.fromisoformat(activity["end"]) if "end" in activity else datetime.datetime.now()
             total_seconds += (end_time - start_time).total_seconds()
-        usage_summary[day] = total_seconds / 3600  # Convert seconds to hours
+        usage_summary[day] = total_seconds / 3600  #Converting seconds to hours
     return usage_summary
 
 def is_watching_videos():
     """Check if the user is watching videos"""
     try:
         window = gw.getActiveWindow()
-        return window and ("YouTube" in window.title or "Netflix" in window.title or "Prime Video" in window.title)
+        return window and ("YouTube" in window.title or "Netflix" in window.title)
     except:
         return False
 
@@ -118,7 +118,7 @@ def create_image():
     return image
 
 def on_maximise(icon):
-    """Happens when the user clicks on "Maximise" in the taskbar's icon"""
+    """Occurs when the user clicks on "Maximise" in the taskbar's icon"""
     global icon_status
     icon.stop()
     icon_status = False
@@ -127,7 +127,7 @@ def on_maximise(icon):
     window.restore()
 
 def on_exit(icon, _):
-    """Happens when exiting the program"""
+    """Occurs when exiting the program"""
     global run
     icon.stop()
     run = False
@@ -176,10 +176,13 @@ class Bouton():
                 self.clicked = False
         return reset_click
 
-def draw_text(texte, font, couleur, x, y):
-    """small function used to draw text (the text is centered)"""
+def draw_text(texte, font, couleur, x, y, centered = True):
+    """small function used to draw text"""
     img = font.render(texte, True, couleur)
-    text_width, text_height = font.size(texte)
+    if centered:
+        text_width, text_height = font.size(texte)
+    else:
+        text_width, text_height = 0, 0
     SCREEN.blit(img, (x - text_width // 2, y - text_height // 2))
 
 pickle_in = open(f'data/data_main', 'rb')
